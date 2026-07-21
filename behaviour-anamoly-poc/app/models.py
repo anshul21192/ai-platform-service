@@ -46,7 +46,7 @@ class TelemetryEventLog(Base):
     action = Column(String, index=True)  # e.g., TRANSFER, LOGIN, VIEW_DASHBOARD
     ts = Column(Integer)  # Unix timestamp in milliseconds
     dwell_from_prev_ms = Column(Integer)  # Time since previous event
-    metadata = Column(JSON)  # Action-specific payload
+    metadata_ = Column("metadata", JSON)  # Action-specific payload
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class SessionTelemetry(Base):
