@@ -14,6 +14,7 @@ cd behaviour-anamaly-poc
 
 ### 2️⃣ Activate venv
 ```bash
+python -m venv venv
 venv\Scripts\activate 
 ```
 
