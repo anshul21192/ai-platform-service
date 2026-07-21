@@ -9,7 +9,12 @@ An enterprise-grade backend system for detecting fraudulent behavior in banking 
 ### 1️⃣ Clone Repository
 ```bash
 git clone https://github.com/anshul21192/ai-platform-service.git
-cd ai-platform-service
+cd behaviour-anamaly-poc
+```
+
+### 2️⃣ Activate venv
+```bash
+venv\Scripts\activate 
 ```
 
 ### 2️⃣ Install Dependencies
