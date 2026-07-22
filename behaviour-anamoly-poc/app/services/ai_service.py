@@ -64,18 +64,24 @@ class AIService:
         ])
         
         signal_weights_context = "\n".join([
-            f"- {k}: {v} points" for k, v in list(SIGNAL_WEIGHTS.items())[:10]
+            f"- {k}: {v} points" for k, v in SIGNAL_WEIGHTS.items()
         ])
         
         prompt = f'''
-You are an advanced banking fraud detection AI system with expertise in behavioral fraud patterns.
-Analyze this user session for suspicious behavior using the patterns and signal weights below.
+You are an advanced banking fraud detection AI system with expertise in behavioral biometrics and event pattern analysis.
+Analyze this user session for suspicious behavior using the patterns, signal weights, and keystroke biometrics benchmarks below.
 
 KNOWN FRAUD PATTERNS (Typologies):
 {fraud_patterns_context}
 
 KEY SIGNAL WEIGHTS (Evidence-Based):
 {signal_weights_context}
+
+HUMAN KEYSTROKE BIOMETRICS BENCHMARKS:
+- Typing Speed: Normal human range is 2.0 - 7.0 chars/sec. (>15 chars/sec indicates automated script injection / bot payload).
+- Dwell Time (key press duration): Normal human range is 60ms - 150ms. (<15ms indicates synthetic key injection).
+- Flight Time (inter-key pause): Normal human range is 80ms - 250ms. (<10ms indicates automated tool).
+- Backspace / Error Ratio: High ratio (>40% of total keys) combined with long pauses indicates hesitation, coercion, or social engineering APP scams.
 
 SESSION TELEMETRY CONTEXT:
 - Total Events: {telemetry_context.get('event_count', 0)}
@@ -85,6 +91,7 @@ SESSION TELEMETRY CONTEXT:
 - Large Transfer (>$10k): {telemetry_context.get('has_large_transfer', False)}
 - Settings Changes Count: {telemetry_context.get('settings_changes', 0)}
 - Sensitive Action Count: {telemetry_context.get('sensitive_action_count', 0)}
+- Keystroke Dynamics Summary: {json.dumps(telemetry_context.get('keystroke_summary', {})) if telemetry_context.get('keystroke_summary') else 'None'}
 - Detected Anomalies: {', '.join(anomalies) if anomalies else 'None'}
 
 FRAUD DETECTION SCORING GUIDELINES:
@@ -94,6 +101,9 @@ FRAUD DETECTION SCORING GUIDELINES:
 - BULK OPERATIONS (>10x baseline) → Risk 70+
 - RAPID SENSITIVE ACTIONS → Risk 60+
 - DIRECT ROUTE ACCESS (no predecessor) → Risk 65+
+- KEYSTROKE BOT SPEED / SCRIPT INJECTION → Risk 80+
+- KEYSTROKE UNREALISTIC FLIGHT TIME → Risk 75+
+- KEYSTROKE EXCESSIVE HESITATION / COERCION → Risk 60+
 - Each anomaly detected → +15 points
 - Rare action with safe context → Risk 30-50 (evaluate carefully)
 
@@ -167,6 +177,15 @@ Respond in STRICT JSON format:
             elif "UNAUTHORIZED_SETTING" in anomaly:
                 risk_score += SIGNAL_WEIGHTS["toggle_alerts_off_before_transfer"]
                 matched_patterns.append("Guardrail Removal")
+            elif "KEYSTROKE_BOT_SPEED" in anomaly:
+                risk_score += SIGNAL_WEIGHTS.get("keystroke_bot_speed", 25)
+                matched_patterns.append("Scripted / Bot Keystroke Speed")
+            elif "KEYSTROKE_UNREALISTIC_FLIGHT_TIME" in anomaly:
+                risk_score += SIGNAL_WEIGHTS.get("keystroke_unrealistic_flight_time", 20)
+                matched_patterns.append("Unrealistic Keystroke Flight Time")
+            elif "KEYSTROKE_EXCESSIVE_HESITATION" in anomaly:
+                risk_score += SIGNAL_WEIGHTS.get("keystroke_excessive_hesitation", 15)
+                matched_patterns.append("Coerced / Erratic Keystroke Behavior")
             else:
                 risk_score += SIGNAL_WEIGHTS["abnormal_dwell_sensitive_screen"]
         

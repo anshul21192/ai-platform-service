@@ -232,6 +232,29 @@ def detect_anomalies(events: list, user_id: str = None) -> list:
     if has_audit_logs and breadth_views > 4:
         anomalies.append("BREADTH_RECONNAISSANCE")
     
+    # ============ PATTERN 9: KEYSTROKE DYNAMICS ANOMALIES ============
+    keystroke_events = [e for e in events if e.action == "KEYSTROKE_DYNAMICS" or "averageDwellTime" in e.metadata or "typingSpeed" in e.metadata]
+    for ks_event in keystroke_events:
+        meta = ks_event.metadata or {}
+        typing_speed = meta.get("typingSpeed", 0)
+        avg_dwell = meta.get("averageDwellTime", 0)
+        avg_flight = meta.get("averageFlightTime", 0)
+        total_keys = meta.get("totalKeystrokes", 0)
+        backspace_count = meta.get("backspaceCount", 0)
+        pause_count = meta.get("pauseCount", 0)
+
+        # Bot / Script Injection speed (e.g. typing speed > 15 char/sec or dwell time < 15ms)
+        if typing_speed > 15 or (avg_dwell > 0 and avg_dwell < 15):
+            anomalies.append("KEYSTROKE_BOT_SPEED")
+
+        # Synthetic Flight Time (near zero or negative flight time indicating automation)
+        if avg_flight > 0 and avg_flight < 10:
+            anomalies.append("KEYSTROKE_UNREALISTIC_FLIGHT_TIME")
+
+        # Coercion / Excessive Hesitation / High Error Ratio (backspaces > 40% of keystrokes or pause count >= 4)
+        if (total_keys >= 5 and backspace_count / total_keys > 0.4) or pause_count >= 4:
+            anomalies.append("KEYSTROKE_EXCESSIVE_HESITATION")
+
     return list(set(anomalies))  # Remove duplicates
 
 
@@ -250,6 +273,7 @@ def analyze_fraud_risk(
     login_events = [e for e in events if e.action == "LOGIN"]
     transfer_events = [e for e in events if e.action == "TRANSFER"]
     settings_events = [e for e in events if e.action.startswith("CHANGE_") or e.action.startswith("UPDATE_")]
+    keystroke_events = [e for e in events if e.action == "KEYSTROKE_DYNAMICS" or "typingSpeed" in e.metadata]
     
     new_device = False
     new_location = False
@@ -258,6 +282,18 @@ def analyze_fraud_risk(
         login_meta = login_events[0].metadata
         new_device = login_meta.get("newDevice", False)
         new_location = login_meta.get("newLocation", False)
+
+    keystroke_summary = None
+    if keystroke_events:
+        latest_ks = keystroke_events[-1].metadata
+        keystroke_summary = {
+            "typingSpeed": latest_ks.get("typingSpeed"),
+            "averageDwellTime": latest_ks.get("averageDwellTime"),
+            "averageFlightTime": latest_ks.get("averageFlightTime"),
+            "totalKeystrokes": latest_ks.get("totalKeystrokes"),
+            "backspaceCount": latest_ks.get("backspaceCount"),
+            "pauseCount": latest_ks.get("pauseCount")
+        }
     
     # Build telemetry payload for AI analysis (using NEW SCHEMA)
     telemetry_context = {
@@ -270,7 +306,8 @@ def analyze_fraud_risk(
         "has_new_location": new_location,
         "settings_changes": len(settings_events),
         "anomalies": anomalies,
-        "sensitive_action_count": sum(1 for e in events if e.action in SENSITIVE_ACTIONS)
+        "sensitive_action_count": sum(1 for e in events if e.action in SENSITIVE_ACTIONS),
+        "keystroke_summary": keystroke_summary
     }
     
     # Use NEW AI method that works with telemetry events
