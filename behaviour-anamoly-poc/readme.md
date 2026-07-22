@@ -98,30 +98,6 @@ curl -X POST http://localhost:8000/api/v1/fraud/telemetry/events \
 }
 ```
 
----
-
-## 📁 Project Structure
-
-```
-behaviour-anomaly-poc/
-├── app/
-│   ├── main.py                 # FastAPI entry point
-│   ├── config.py               # Configuration
-│   ├── database.py             # SQLAlchemy setup
-│   ├── models.py               # Database tables
-│   ├── schemas.py              # Request/Response models
-│   ├── fraud_patterns.py       # Fraud patterns library
-│   ├── routers/
-│   │   └── telemetry.py        # Event ingestion API
-│   └── services/
-│       ├── ai_service.py       # Vertex AI analysis
-│       └── email_service.py    # Email alerts
-├── data/
-│   └── behaviour.db            # SQLite database
-├── requirements.txt
-├── .env                        # Configuration (DO NOT COMMIT)
-└── readme.md
-```
 
 ---
 
@@ -161,6 +137,9 @@ behaviour-anomaly-poc/
 **GET** `/api/v1/fraud/telemetry/sessions/{user_id}` - Get user sessions
 
 ---
+
+
+
 
 ## 🐛 Troubleshooting
 
