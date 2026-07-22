@@ -35,6 +35,9 @@ SMTP_SERVER=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USERNAME=your-email@gmail.com
 SMTP_PASSWORD=your-app-password
+OPENROUTER_API_KEY=
+VERTEX_AI_LOCATION=
+
 ```
 
 ### 4️⃣ Setup Google Cloud Authentication
